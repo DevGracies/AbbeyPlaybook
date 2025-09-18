@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String?      // null if OAuth-only
+  fullName    String?
+  position    String?
+  about       String?
+  avatarUrl   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  playbooks   Playbook[]
+  loves       PlaybookLove[]
+  followers   Follow[]     @relation("followed")
+  following   Follow[]     @relation("following")
+  refreshTokens RefreshToken[]
+}
+
+model Playbook {
+  id         String       @id @default(uuid())
+  title      String
+  content    String
+  author     User         @relation(fields: [authorId], references: [id])
+  authorId   String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  loves      PlaybookLove[]
+}
+
+model PlaybookLove {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  playbook   Playbook  @relation(fields: [playbookId], references: [id])
+  playbookId String
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, playbookId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("following", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("followed", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
