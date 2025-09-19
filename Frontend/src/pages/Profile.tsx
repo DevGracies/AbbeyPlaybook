@@ -1,31 +1,86 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { Avatar, Button, TextField } from "@mui/material";
 import { Edit, Save, Logout, Upload } from "@mui/icons-material";
+import client from "../api/client";
+
+interface ProfileData {
+  name: string;
+  position: string;
+  about: string;
+  avatar: string;
+}
 
 const Profile: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "Grace Adegunle",
-    position: "Software Engineer",
-    about: "I love solving problems with technology and helping my teammates grow.",
-    avatar: "https://i.pravatar.cc/150?img=5",
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<ProfileData>({
+    name: "",
+    position: "",
+    about: "",
+    avatar: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Fetch profile from backend
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await client.get<ProfileData>("/profile/me");
+        setProfile(data);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
-    setEditMode(false);
-  
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      await client.put("/profile/update", profile);
+      setEditMode(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (e.target.files && e.target.files[0]) {
-      const fileURL = URL.createObjectURL(e.target.files[0]);
-      setProfile({ ...profile, avatar: fileURL });
+      const formData = new FormData();
+      formData.append("avatar", e.target.files[0]);
+
+      try {
+        const { data } = await client.post<{ avatarUrl: string }>(
+          "/profile/avatar",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        setProfile({ ...profile, avatar: data.avatarUrl });
+      } catch (err) {
+        console.error("Error uploading avatar:", err);
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await client.post("/auth/logout");
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Error logging out:", err);
     }
   };
 
@@ -37,7 +92,6 @@ const Profile: React.FC = () => {
         transition={{ duration: 0.6 }}
       >
         <ProfileCard>
-        
           <AvatarWrapper>
             <Avatar src={profile.avatar} sx={{ width: 120, height: 120 }} />
             {editMode && (
@@ -54,7 +108,6 @@ const Profile: React.FC = () => {
             />
           </AvatarWrapper>
 
-      
           <ProfileInfo>
             {editMode ? (
               <>
@@ -93,17 +146,31 @@ const Profile: React.FC = () => {
               </>
             )}
           </ProfileInfo>
+
           <Actions>
             {editMode ? (
-              <ActionButton variant="contained" onClick={handleSave} startIcon={<Save />}>
-                Save
+              <ActionButton
+                variant="contained"
+                onClick={handleSave}
+                startIcon={<Save />}
+                disabled={loading}
+              >
+                {loading ? "Saving..." : "Save"}
               </ActionButton>
             ) : (
-              <ActionButton variant="contained" onClick={() => setEditMode(true)} startIcon={<Edit />}>
+              <ActionButton
+                variant="contained"
+                onClick={() => setEditMode(true)}
+                startIcon={<Edit />}
+              >
                 Edit Profile
               </ActionButton>
             )}
-            <LogoutButton variant="outlined" startIcon={<Logout />}>
+            <LogoutButton
+              variant="outlined"
+              startIcon={<Logout />}
+              onClick={handleLogout}
+            >
               Logout
             </LogoutButton>
           </Actions>
@@ -115,6 +182,7 @@ const Profile: React.FC = () => {
 
 export default Profile;
 
+/* ------------------- Styled Components ------------------- */
 const Wrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -130,7 +198,7 @@ const ProfileCard = styled.div`
   padding: 2rem;
   width: 100%;
   max-width: 550px;
-  box-shadow: 0px 6px 14px rgba(0,0,0,0.08);
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.08);
   text-align: center;
 `;
 

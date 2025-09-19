@@ -12,11 +12,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-
-        {/* Protected Routes */}
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
           <Route path="/" element={<Home />} />
           <Route path="/playbooks" element={<Playbook />} />

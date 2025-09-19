@@ -1,31 +1,118 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { Button, Avatar } from "@mui/material";
-import { FavoriteBorder, BookOutlined } from "@mui/icons-material";
+import {
+  Button,
+  Avatar,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+} from "@mui/material";
+import {
+  FavoriteBorder,
+  Favorite,
+  BookOutlined,
+  Close,
+} from "@mui/icons-material";
+import client from "../api/client";
 
-const users = [
-  { id: 1, name: "John Doe", position: "Software Engineer", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: 2, name: "Sarah Smith", position: "Product Manager", avatar: "https://i.pravatar.cc/150?img=2" },
-  { id: 3, name: "Michael Lee", position: "UX Designer", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: 4, name: "Emily Davis", position: "Data Analyst", avatar: "https://i.pravatar.cc/150?img=4" },
-];
+// Types
+interface User {
+  _id: string;
+  name: string;
+  position: string;
+  avatar: string;
+}
 
-const playbooks = [
-  { id: 1, title: "Scaling Microservices", author: "John Doe", description: "Best practices on scaling backend services.", likes: 24 },
-  { id: 2, title: "UX Research Guide", author: "Sarah Smith", description: "How to run effective user research.", likes: 18 },
-  { id: 3, title: "Data Analysis Workflow", author: "Emily Davis", description: "Efficient ways to analyze data using Python.", likes: 32 },
-];
+interface Playbook {
+  _id: string;
+  title: string;
+  description: string;
+  author: string;
+  likes: number;
+}
 
-const Explore: React.FC = () => {
+const Explore = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [followedUsers, setFollowedUsers] = useState<string[]>([]);
+  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+  const [selected, setSelected] = useState<Playbook | null>(null);
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
+
+  // Fetch users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await client.get("/users");
+        setUsers(res.data);
+      } catch (err) {
+        console.error("Error fetching users", err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Fetch playbooks of followed users
+  useEffect(() => {
+    if (followedUsers.length === 0) {
+      setPlaybooks([]);
+      return;
+    }
+    const fetchPlaybooks = async () => {
+      try {
+        const res = await client.get("/playbooks", {
+          params: { authors: followedUsers },
+        });
+        setPlaybooks(res.data);
+      } catch (err) {
+        console.error("Error fetching playbooks", err);
+      }
+    };
+    fetchPlaybooks();
+  }, [followedUsers]);
+
+  // Handle follow/unfollow
+  const toggleFollow = async (userId: string) => {
+    try {
+      if (followedUsers.includes(userId)) {
+        await client.post(`/unfollow/${userId}`);
+        setFollowedUsers((prev) => prev.filter((id) => id !== userId));
+      } else {
+        await client.post(`/follow/${userId}`);
+        setFollowedUsers((prev) => [...prev, userId]);
+      }
+    } catch (err) {
+      console.error("Error following/unfollowing", err);
+    }
+  };
+
+  // Handle like
+  const toggleLike = async (pb: Playbook) => {
+    try {
+      const alreadyLiked = liked[pb._id];
+      const res = await client.post(`/playbooks/${pb._id}/like`, {
+        like: !alreadyLiked,
+      });
+      setPlaybooks((prev) =>
+        prev.map((p) =>
+          p._id === pb._id ? { ...p, likes: res.data.likes } : p
+        )
+      );
+      setLiked((prev) => ({ ...prev, [pb._id]: !alreadyLiked }));
+    } catch (err) {
+      console.error("Error liking playbook", err);
+    }
+  };
+
   return (
     <Wrapper>
-     
+      {/* Users Section */}
       <SectionTitle>Discover Employees</SectionTitle>
       <HorizontalScroll>
         {users.map((user) => (
           <motion.div
-            key={user.id}
+            key={user._id}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -34,7 +121,12 @@ const Explore: React.FC = () => {
               <Avatar src={user.avatar} alt={user.name} sx={{ width: 70, height: 70 }} />
               <h3>{user.name}</h3>
               <p>{user.position}</p>
-              <FollowButton variant="contained">Follow</FollowButton>
+              <FollowButton
+                variant="contained"
+                onClick={() => toggleFollow(user._id)}
+              >
+                {followedUsers.includes(user._id) ? "Unfollow" : "Follow"}
+              </FollowButton>
             </UserCard>
           </motion.div>
         ))}
@@ -45,12 +137,12 @@ const Explore: React.FC = () => {
       <PlaybookList>
         {playbooks.map((pb) => (
           <motion.div
-            key={pb.id}
+            key={pb._id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <PlaybookCard>
+            <PlaybookCard onClick={() => setSelected(pb)}>
               <BookIconWrapper>
                 <BookOutlined />
               </BookIconWrapper>
@@ -58,14 +150,36 @@ const Explore: React.FC = () => {
               <p>{pb.description}</p>
               <PlaybookFooter>
                 <span>By {pb.author}</span>
-                <Likes>
-                  <FavoriteBorder /> {pb.likes}
+                <Likes onClick={(e) => { e.stopPropagation(); toggleLike(pb); }}>
+                  {liked[pb._id] ? <Favorite /> : <FavoriteBorder />}
+                  {pb.likes}
                 </Likes>
               </PlaybookFooter>
             </PlaybookCard>
           </motion.div>
         ))}
       </PlaybookList>
+
+      {/* Modal */}
+      <Dialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+          {selected?.title}
+          <IconButton onClick={() => setSelected(null)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <p>{selected?.description}</p>
+          <p style={{ marginTop: "1rem", fontWeight: 600 }}>
+            Author: {selected?.author}
+          </p>
+        </DialogContent>
+      </Dialog>
     </Wrapper>
   );
 };
@@ -157,6 +271,7 @@ const PlaybookCard = styled.div`
   padding: 1.5rem;
   box-shadow: 0px 4px 8px rgba(0,0,0,0.06);
   transition: all 0.3s ease;
+  cursor: pointer;
 
   h3 {
     font-size: 1.3rem;
@@ -194,4 +309,5 @@ const Likes = styled.div`
   align-items: center;
   gap: 0.3rem;
   color: #d62828;
+  cursor: pointer;
 `;
