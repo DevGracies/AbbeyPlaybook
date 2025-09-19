@@ -6,18 +6,15 @@ import Profile from './pages/Profile';
 import Playbook from './pages/Playbook';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
-import PrivateRoute from './components/PrivateRoute'; // import wrapper
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Protected Routes */}
-        <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
+        <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/playbooks" element={<Playbook />} />
           <Route path="/explore" element={<Explore />} />
