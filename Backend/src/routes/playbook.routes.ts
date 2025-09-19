@@ -1,13 +1,12 @@
 import { Router } from "express";
-import * as playbookCtrl from "../controllers/playbook.controller";
-import { requireAuth } from "../middleware/auth.middleware";
+import { create, getAll, update, remove, love } from "../controllers/playbook.controller";
 
-const r = Router();
-r.post("/", requireAuth, playbookCtrl.createPlaybook);
-r.get("/", requireAuth, playbookCtrl.listPlaybooks); // ?authorId= & ?feed=true
-r.post("/:id/love", requireAuth, playbookCtrl.toggleLove);
-r.get("/:id", requireAuth, playbookCtrl.getPlaybook);
-r.put("/:id", requireAuth, playbookCtrl.updatePlaybook);
-r.delete("/:id", requireAuth, playbookCtrl.deletePlaybook);
+const router = Router();
 
-export default r;
+router.post("/", create);
+router.get("/", getAll);
+router.put("/:id", update);
+router.delete("/:id", remove);
+router.post("/:id/love", love);
+
+export default router;

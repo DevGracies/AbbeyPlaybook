@@ -1,16 +1,14 @@
-import { DataSource } from "typeorm";
-import dotenv from "dotenv";
+import { Pool } from "pg";
+import { config } from "./config";
 
-dotenv.config();
+export const pool = new Pool({
+  connectionString: config.db.url,
+   ssl: {
+    rejectUnauthorized: false, 
+  },
+});
 
-export const AppDataSource = new DataSource({
-  type: process.env.DB_TYPE as "postgres" | "mssql",
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  synchronize: true,
-  logging: false,
-  entities: [__dirname + "/../models/**/*.{ts,js}"],
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
 });

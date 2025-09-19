@@ -1,23 +1,16 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { config } from "../config";
-import { prisma } from "../config/prisma";
+import { verifyToken } from "../utils/jwt";
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "No token provided" });
 
-export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+  const token = authHeader.split(" ")[1];
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "Missing authorization header" });
-    const token = authHeader.split(" ")[1];
-    const payload: any = jwt.verify(token, config.jwt.accessSecret);
-    const user = await prisma.user.findUnique({ where: { id: payload.userId }});
-    if (!user) return res.status(401).json({ error: "User not found" });
-    req.user = user;
+    const decoded = verifyToken(token, "access");
+    (req as any).user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
+    res.status(401).json({ error: "Invalid or expired token" });
   }
-}
+};

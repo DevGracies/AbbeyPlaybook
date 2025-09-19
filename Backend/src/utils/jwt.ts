@@ -1,28 +1,24 @@
-import jwt from "jsonwebtoken";
-import { config } from "../config";
+import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
+import { config } from "../config/config";
 
-export const signAccessToken = (payload: object) => {
-  return jwt.sign(payload, config.jwt.accessSecret, {
-    expiresIn: config.jwt.accessExpiry,
-  });
+// Explicitly type secrets
+const accessSecret: Secret = config.jwt.accessSecret;
+const refreshSecret: Secret = config.jwt.refreshSecret;
+
+// Sign Access Token
+export const signAccessToken = (payload: string | object | Buffer): string => {
+  const options: SignOptions = { expiresIn: config.jwt.accessExpiry as any }; // cast to any to fix TS error
+  return jwt.sign(payload, accessSecret, options);
 };
 
-export const signRefreshToken = (payload: object) => {
-  return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiry,
-  });
+// Sign Refresh Token
+export const signRefreshToken = (payload: string | object | Buffer): string => {
+  const options: SignOptions = { expiresIn: config.jwt.refreshExpiry as any }; // cast to any to fix TS error
+  return jwt.sign(payload, refreshSecret, options);
 };
 
-export const verifyAccessToken = (token: string) => {
-  return jwt.verify(token, config.jwt.accessSecret);
-};
-
-export const verifyRefreshToken = (token: string) => {
-  return jwt.verify(token, config.jwt.refreshSecret);
-};
-
-export const generateToken = (payload: object) => {
-  const accessToken = signAccessToken(payload);
-  const refreshToken = signRefreshToken(payload);
-  return { accessToken, refreshToken };
+// Verify Token
+export const verifyToken = (token: string, type: "access" | "refresh"): string | JwtPayload => {
+  const secret: Secret = type === "access" ? accessSecret : refreshSecret;
+  return jwt.verify(token, secret);
 };
