@@ -1,6 +1,11 @@
+import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
-const PrivateRoute = ({ children }: { children: JSX.Element }) => {
+interface PrivateRouteProps {
+  children: ReactNode;
+}
+
+const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const isLoggedIn = !!localStorage.getItem("token");
   return isLoggedIn ? children : <Navigate to="/signup" />;
 };
