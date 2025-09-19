@@ -1,5 +1,3 @@
-
-import React from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -212,7 +210,7 @@ const listItem = {
   show: (i = 1) => ({ opacity: 1, x: 0, transition: { delay: i * 0.12 } }),
 };
 
-export default function Home(): JSX.Element {
+export default function Home(){
   const checklist = [
     { id: 1, text: "Daily standup checklist" },
     { id: 2, text: "Onboarding steps for new hires" },

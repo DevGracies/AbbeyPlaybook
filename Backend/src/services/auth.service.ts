@@ -3,26 +3,19 @@ import { hashPassword, comparePassword } from "../utils/hash";
 import { signAccessToken, signRefreshToken } from "../utils/jwt";
 
 export const signup = async (email: string, password: string) => {
-  try {
-    const hashed = await hashPassword(password);
-
-    const result = await pool.query(
-      `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email`,
-      [email, hashed]
-    );
-
-    if (!result.rows.length) throw new Error("Failed to create user");
-
-    const user = result.rows[0];
-    const accessToken = signAccessToken({ id: user.id, email: user.email });
-    const refreshToken = signRefreshToken({ id: user.id, email: user.email });
-
-    return { user, accessToken, refreshToken };
-  } catch (err: any) {
-    console.error("Signup service error:", err);
-    throw new Error(err.message || "Signup failed");
-  }
+  console.log("Signup input:", { email, password }); // debug
+  const hashed = await hashPassword(password);
+  const result = await pool.query(
+    `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email`,
+    [email, hashed]
+  );
+  console.log("Database insert result:", result.rows); // debug
+  const user = result.rows[0];
+  const accessToken = signAccessToken({ id: user.id, email: user.email });
+  const refreshToken = signRefreshToken({ id: user.id, email: user.email });
+  return { user, accessToken, refreshToken };
 };
+
 
 export const login = async (email: string, password: string) => {
   try {

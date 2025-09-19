@@ -7,14 +7,28 @@ import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import playbookRoutes from "./routes/playbook.routes";
 import { errorHandler } from "./middleware/error.middleware";
-import "./utils/oauth"; // initialize Google OAuth
+import "./utils/oauth"; 
 import { config } from "./config/config";
 import { pool } from "./config/database";
 
 const app = express();
 
 // Middlewares
-app.use(cors({ origin: "*" }));
+
+const allowedOrigins = ["http://localhost:5173"];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true, 
+}));
+
 app.use(express.json());
 app.use(session({ secret: "abbey_secret", resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
