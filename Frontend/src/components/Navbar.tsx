@@ -1,17 +1,25 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { AppBar, Toolbar, IconButton, Drawer, List, ListItem, ListItemText, ListItemProps } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
 import { Menu as MenuIcon, AccountCircle } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// Wrap AppBar with motion
+// Motion-enabled AppBar
 const MotionAppBar = motion(AppBar);
 
 const StyledAppBar = styled(MotionAppBar)`
-  background-color: #0a1d37; 
+  background-color: #0a1d37;
   box-shadow: none;
-  position: fixed !important; 
+  position: fixed !important;
   top: 0;
   left: 0;
   width: 100%;
@@ -53,27 +61,11 @@ const MobileMenu = styled.div`
   }
 `;
 
-// Typed helper for ListItem + RouterLink
-interface ListItemLinkProps extends ListItemProps {
-  to: string;
-}
-
-const ListItemLink: React.FC<ListItemLinkProps> = ({ to, ...props }) => (
-  <ListItem
-    component={RouterLink}
-    to={to}
-    {...props}
-  />
-);
-
 const Navbar: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const toggleDrawer = (open: boolean) => () => setDrawerOpen(open);
 
-  const toggleDrawer = (open: boolean) => () => {
-    setDrawerOpen(open);
-  };
-
-  const drawerLinks = [
+  const links = [
     { text: "Home", path: "/" },
     { text: "Playbooks", path: "/playbooks" },
     { text: "Explore", path: "/explore" },
@@ -87,11 +79,17 @@ const Navbar: React.FC = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <Toolbar style={{ display: "flex", justifyContent: "space-between", padding: "0 1rem" }}>
+        <Toolbar
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "0 1rem",
+          }}
+        >
           <Brand to="/">AbbeyPlaybook</Brand>
 
           <NavLinks>
-            {drawerLinks.map(link => (
+            {links.map(link => (
               <RouterLink key={link.text} to={link.path}>
                 {link.text}
               </RouterLink>
@@ -103,7 +101,12 @@ const Navbar: React.FC = () => {
           </IconButton>
 
           <MobileMenu>
-            <IconButton edge="end" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
+            <IconButton
+              edge="end"
+              color="inherit"
+              aria-label="menu"
+              onClick={toggleDrawer(true)}
+            >
               <MenuIcon />
             </IconButton>
           </MobileMenu>
@@ -112,15 +115,15 @@ const Navbar: React.FC = () => {
 
       <Drawer anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
         <List sx={{ width: 250 }}>
-          {drawerLinks.map(link => (
-            <ListItemLink
+          {links.map(link => (
+            <ListItemButton
               key={link.text}
-              button
+              component={RouterLink}
               to={link.path}
               onClick={toggleDrawer(false)}
             >
               <ListItemText primary={link.text} />
-            </ListItemLink>
+            </ListItemButton>
           ))}
         </List>
       </Drawer>
