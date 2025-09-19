@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import axios, { AxiosError } from "axios";
+import  { AxiosError } from "axios";
+import client from "../api/client";
 
 const GlobalReset = createGlobalStyle`
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,33 +119,42 @@ export default function SignUp() {
   const { register, handleSubmit } = useForm<SignUpForm>({ mode: "onSubmit" });
   const navigate = useNavigate();
 
-   const onSubmit: SubmitHandler<SignUpForm> = async (data) => {
-    setErrorMessage(""); 
-    if (data.password !== data.confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
+  const onSubmit: SubmitHandler<SignUpForm> = async (data) => {
+  setErrorMessage(""); 
+
+  if (data.password !== data.confirmPassword) {
+    setErrorMessage("Passwords do not match");
+    return;
+  }
+
+  try {
+   const response = await client.post<{
+  user: { id: number; email: string; fullName: string };
+  accessToken: string;
+  refreshToken: string;
+}>("/auth/signup", {
+  fullName: data.fullName,
+  email: data.email,
+  password: data.password,
+  confirmPassword: data.confirmPassword,
+});
+
+
+    localStorage.setItem("accessToken", response.data.accessToken);
+    localStorage.setItem("refreshToken", response.data.refreshToken);
+
+    navigate("/login");
+  } catch (err: unknown) {
+  
+    if (err instanceof AxiosError && err.response?.data) {
+      setErrorMessage(err.response.data.error || "Something went wrong during signup");
+    } else if (err instanceof Error) {
+      setErrorMessage(err.message);
+    } else {
+      setErrorMessage("Something went wrong during signup");
     }
-
-    try {
-      const res = await axios.post<{
-        user: { id: number; email: string; fullName: string };
-        accessToken: string;
-        refreshToken: string;
-      }>(
-        "https://abbeyplaybook.onrender.com/api/auth/signup",
-        { fullName: data.fullName, email: data.email, password: data.password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      localStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-
-      navigate("/login");
-    } catch (err: unknown) {
-      const axiosErr = err as AxiosError<{ error: string }>;
-      setErrorMessage(axiosErr.response?.data?.error || "Something went wrong during signup");
-    }
-  };
+  }
+};
 
   return (
     <>

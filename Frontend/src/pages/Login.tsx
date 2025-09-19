@@ -107,18 +107,19 @@ interface LoginForm {
 
 export default function Login() {
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const { register, handleSubmit } = useForm<LoginForm>({ mode: "onSubmit" });
-
   const dispatch = useDispatch<AppDispatch>();
+const { register, handleSubmit } = useForm<LoginForm>({ mode: "onSubmit" });
+
 const onSubmit: SubmitHandler<LoginForm> = async (data) => {
   setErrorMessage(""); 
   try {
-    const result = await dispatch(login(data)).unwrap();
-
+    const result = await dispatch(login(data)).unwrap(); 
     localStorage.setItem("token", result.token);
     window.location.href = "/";
   } catch (err: unknown) {
-    if (err instanceof Error) {
+    if (typeof err === "string") {
+      setErrorMessage(err);
+    } else if (err instanceof Error) {
       setErrorMessage(err.message);
     } else {
       setErrorMessage("Invalid email or password.");

@@ -10,12 +10,12 @@ import { errorHandler } from "./middleware/error.middleware";
 import "./utils/oauth"; 
 import { config } from "./config/config";
 import { pool } from "./config/database";
-
+import { createTables } from "./config/createTables";
 const app = express();
 
 // Middlewares
 
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = ["http://localhost:5173", "https://abbeyplaybook.vercel.app"];
 
 app.use(cors({
   origin: function(origin, callback) {

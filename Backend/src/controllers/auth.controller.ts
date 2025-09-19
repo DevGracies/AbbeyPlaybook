@@ -3,12 +3,10 @@ import * as AuthService from "../services/auth.service";
 
 export const signup = async (req: Request, res: Response) => {
   try {
-    // Log request body for debugging
     console.log("Signup request body:", req.body);
 
     const { fullName, email, password, confirmPassword } = req.body;
 
-    // Basic validations
     if (!fullName || !email || !password || !confirmPassword) {
       return res
         .status(400)
@@ -19,7 +17,6 @@ export const signup = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    // Call service
     const data = await AuthService.signup(fullName, email, password);
 
     console.log("Signup successful:", data);
