@@ -1,5 +1,4 @@
-// src/pages/Login.tsx
-import React from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { login } from "../context/Reducer/authReducer";
@@ -117,17 +116,40 @@ const StyledLink = styled(Link)`
   &:hover { text-decoration: underline; }
 `;
 
+
 const leftVariant = { hidden: { x: -60, opacity: 0 }, show: { x: 0, opacity: 1 } };
 const rightVariant = { hidden: { x: 60, opacity: 0 }, show: { x: 0, opacity: 1 } };
 
 export default function Login(): JSX.Element {
+  const [errorMessage, setErrorMessage] = useState("");
   const { register, handleSubmit, formState } = useForm<any>({ mode: "onSubmit" });
   const dispatch = useDispatch<any>();
 
-  const onSubmit = (data: any) => {
-  
-    dispatch<any>(login(data));
-  };
+const onSubmit = async (data: any) => {
+  setErrorMessage(""); // reset any previous errors
+  try {
+    const res = await fetch("https://abbeyplaybook.onrender.com/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem("token", result.token);
+      dispatch<any>(login(result.user));
+      window.location.href = "/"; // redirect to home
+    } else {
+      // Show backend message
+      setErrorMessage(result.message || "Invalid email or password.");
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    setErrorMessage("Unable to connect to server. Please try again later.");
+  }
+};
+
 
   return (
     <>
@@ -186,6 +208,14 @@ export default function Login(): JSX.Element {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.45 }}
           >
+              {errorMessage && (
+    <Typography
+      variant="body2"
+      style={{ color: "#b71c1c", fontWeight: 600, marginBottom: "0.5rem" }}
+    >
+      {errorMessage}
+    </Typography>
+  )}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <Typography variant="h6" style={{ color: "#0a1d37", fontWeight: 800 }}>
                 Sign in to AbbeyPlaybook

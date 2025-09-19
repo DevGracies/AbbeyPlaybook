@@ -9,15 +9,20 @@ import playbookRoutes from "./routes/playbook.routes";
 import { errorHandler } from "./middleware/error.middleware";
 import "./utils/oauth"; // initialize Google OAuth
 import { config } from "./config/config";
+import { pool } from "./config/database";
 
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(session({ secret: "abbey_secret", resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
+
+pool.query("SELECT NOW()")
+  .then(() => console.log("Database connected"))
+  .catch(err => console.error("Database connection failed:", err));
 
 // Routes
 app.use("/api/auth", authRoutes);

@@ -2,10 +2,8 @@ import { Pool } from "pg";
 import { config } from "./config";
 
 export const pool = new Pool({
-  connectionString: config.db.url,
-   ssl: {
-    rejectUnauthorized: false, 
-  },
+  connectionString: process.env.DATABASE_URL || "postgresql://abbeyplaybook_user:HG1bcAMA9w07hQfxXu1lxwOz2PZewPYA@dpg-d3670ke3jp1c73fbhejg-a.oregon-postgres.render.com/abbeyplaybook",
+  ssl: { rejectUnauthorized: false },
 });
 
 pool.on("error", (err) => {
