@@ -14,14 +14,16 @@ export const createTables = async () => {
     );
 
     -- Playbooks table
+   
     CREATE TABLE IF NOT EXISTS playbooks (
-      id SERIAL PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      content TEXT NOT NULL, -- renamed from "body" to "content" to match controller
-      loves INT DEFAULT 0,
-      user_id INT REFERENCES users(id) ON DELETE CASCADE,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 
     -- Relationships (Follows) table
     CREATE TABLE IF NOT EXISTS relationships (

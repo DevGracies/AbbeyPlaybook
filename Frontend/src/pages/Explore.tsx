@@ -17,21 +17,23 @@ import {
 } from "@mui/icons-material";
 import client from "../api/client";
 
-// Types
 interface User {
-  _id: string;
-  name: string;
-  position: string;
-  avatar: string;
+  id: number;
+  fullName: string; 
+  position?: string | null;
+  profilePic?: string | null; 
 }
 
+
 interface Playbook {
-  _id: string;
+  id: number;
   title: string;
-  description: string;
-  author: string;
-  likes: number;
+  content: string; 
+  user_id: number;
+  loves: number;
+  created_at: string;
 }
+
 
 const Explore = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -44,7 +46,7 @@ const Explore = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await client.get("/users");
+        const res = await client.get("/users/users");
         setUsers(res.data);
       } catch (err) {
         console.error("Error fetching users", err);
@@ -53,53 +55,71 @@ const Explore = () => {
     fetchUsers();
   }, []);
 
-  // Fetch playbooks of followed users
-  useEffect(() => {
-    if (followedUsers.length === 0) {
-      setPlaybooks([]);
-      return;
+  
+useEffect(() => {
+  const fetchFollows = async () => {
+    try {
+      const res = await client.get("/users/following");
+        setFollowedUsers(res.data.map((id: number) => id.toString()));
+    } catch (err) {
+      console.error("Error fetching current follows", err);
     }
+  };
+  fetchFollows();
+}, []);
+
+useEffect(() => {
     const fetchPlaybooks = async () => {
       try {
-        const res = await client.get("/playbooks", {
-          params: { authors: followedUsers },
-        });
-        setPlaybooks(res.data);
+        let allPlaybooks: Playbook[] = [];
+        for (const userId of followedUsers) {
+          const res = await client.get(`/playbooks/users/${userId}/playbooks`); // ✅ fixed route
+          allPlaybooks = [...allPlaybooks, ...res.data];
+        }
+        setPlaybooks(allPlaybooks);
       } catch (err) {
         console.error("Error fetching playbooks", err);
       }
     };
-    fetchPlaybooks();
+
+    if (followedUsers.length > 0) {
+      fetchPlaybooks();
+    } else {
+      setPlaybooks([]);
+    }
   }, [followedUsers]);
 
-  // Handle follow/unfollow
-  const toggleFollow = async (userId: string) => {
-    try {
-      if (followedUsers.includes(userId)) {
-        await client.post(`/unfollow/${userId}`);
-        setFollowedUsers((prev) => prev.filter((id) => id !== userId));
-      } else {
-        await client.post(`/follow/${userId}`);
-        setFollowedUsers((prev) => [...prev, userId]);
-      }
-    } catch (err) {
-      console.error("Error following/unfollowing", err);
-    }
-  };
 
-  // Handle like
+const toggleFollow = async (userId: number) => {
+  try {
+    if (followedUsers.includes(userId.toString())) {
+      await client.post(`/users/unfollow/${userId}`);
+      setFollowedUsers((prev) => prev.filter((id) => id !== userId.toString()));
+     
+      setPlaybooks((prev) => prev.filter((pb) => pb.user_id !== userId));
+    } else {
+      await client.post(`/users/follow/${userId}`);
+      setFollowedUsers((prev) => [...prev, userId.toString()]);
+
+        const res = await client.get(`/playbooks/users/${userId}/playbooks`);
+      setPlaybooks((prev) => [...prev, ...res.data]);
+    }
+  } catch (err) {
+    console.error("Error following/unfollowing", err);
+  }
+};
+
+
   const toggleLike = async (pb: Playbook) => {
     try {
-      const alreadyLiked = liked[pb._id];
-      const res = await client.post(`/playbooks/${pb._id}/like`, {
-        like: !alreadyLiked,
-      });
+      const alreadyLiked = liked[pb.id];
+      const res = await client.post(`/playbooks/${pb.id}/love`);
       setPlaybooks((prev) =>
         prev.map((p) =>
-          p._id === pb._id ? { ...p, likes: res.data.likes } : p
+          p.id === pb.id ? { ...p, likes: res.data.likes } : p
         )
       );
-      setLiked((prev) => ({ ...prev, [pb._id]: !alreadyLiked }));
+      setLiked((prev) => ({ ...prev, [pb.id]: !alreadyLiked }));
     } catch (err) {
       console.error("Error liking playbook", err);
     }
@@ -107,37 +127,31 @@ const Explore = () => {
 
   return (
     <Wrapper>
-      {/* Users Section */}
-      <SectionTitle>Discover Employees</SectionTitle>
+      <SectionTitle>Discover Employees
+      </SectionTitle>
       <HorizontalScroll>
-        {users.map((user) => (
-          <motion.div
-            key={user._id}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <UserCard>
-              <Avatar src={user.avatar} alt={user.name} sx={{ width: 70, height: 70 }} />
-              <h3>{user.name}</h3>
-              <p>{user.position}</p>
-              <FollowButton
-                variant="contained"
-                onClick={() => toggleFollow(user._id)}
-              >
-                {followedUsers.includes(user._id) ? "Unfollow" : "Follow"}
-              </FollowButton>
-            </UserCard>
-          </motion.div>
-        ))}
+       {users.map((user) => (
+  <motion.div key={user.id}>
+    <UserCard>
+      <Avatar src={user.profilePic ?? ""} alt={user.fullName} sx={{ width: 70, height: 70 }} />
+      <h3>{user.fullName}</h3>
+      <p>{user.position || "No position yet"}</p>
+      <FollowButton
+        onClick={() => toggleFollow(user.id)}
+      >
+        {followedUsers.includes(user.id.toString()) ? "Unfollow" : "Follow"}
+      </FollowButton>
+    </UserCard>
+  </motion.div>
+))}
+
       </HorizontalScroll>
 
-      {/* Playbooks Section */}
       <SectionTitle>Playbooks You Follow</SectionTitle>
       <PlaybookList>
         {playbooks.map((pb) => (
           <motion.div
-            key={pb._id}
+            key={pb.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -147,20 +161,19 @@ const Explore = () => {
                 <BookOutlined />
               </BookIconWrapper>
               <h3>{pb.title}</h3>
-              <p>{pb.description}</p>
+              <p>{pb.content}</p>
               <PlaybookFooter>
-                <span>By {pb.author}</span>
+                {/* <span>By {pb.created_at}</span> */}
                 <Likes onClick={(e) => { e.stopPropagation(); toggleLike(pb); }}>
-                  {liked[pb._id] ? <Favorite /> : <FavoriteBorder />}
-                  {pb.likes}
+                  {liked[pb.id] ? <Favorite /> : <FavoriteBorder />}
+                  {pb.loves}
                 </Likes>
               </PlaybookFooter>
             </PlaybookCard>
           </motion.div>
         ))}
       </PlaybookList>
-
-      {/* Modal */}
+      
       <Dialog
         open={!!selected}
         onClose={() => setSelected(null)}
@@ -174,10 +187,10 @@ const Explore = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <p>{selected?.description}</p>
-          <p style={{ marginTop: "1rem", fontWeight: 600 }}>
+          <p>{selected?.content}</p>
+          {/* <p style={{ marginTop: "1rem", fontWeight: 600 }}>
             Author: {selected?.author}
-          </p>
+          </p> */}
         </DialogContent>
       </Dialog>
     </Wrapper>
@@ -186,7 +199,6 @@ const Explore = () => {
 
 export default Explore;
 
-/* ------------------- Styled Components ------------------- */
 const Wrapper = styled.div`
   padding: 2rem;
   background: #f9fafc;

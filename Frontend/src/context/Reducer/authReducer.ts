@@ -19,7 +19,7 @@ export const login = createAsyncThunk(
   "auth/login",
   async (data: { email: string; password: string }) => {
     const res = await client.post("/auth/login", data);
-    return res.data; 
+    return res.data as { user: User; token: string };
   }
 );
 
@@ -27,7 +27,7 @@ export const registerAsync = createAsyncThunk(
   "auth/register",
   async (data: { name: string; email: string; password: string }) => {
     const res = await client.post("/auth/register", data);
-    return res.data; 
+    return res.data as { user: User; token: string };
   }
 );
 
@@ -40,6 +40,7 @@ const authSlice = createSlice({
       state.token = null;
       state.status = "idle";
       state.error = undefined;
+      localStorage.removeItem("token"); 
     },
   },
   extraReducers: (builder) => {
@@ -48,24 +49,34 @@ const authSlice = createSlice({
         state.status = "loading";
         state.error = undefined;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
-        state.status = "succeeded";
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      })
+      .addCase(
+        login.fulfilled,
+        (state, action: PayloadAction<{ user: User; token: string }>) => {
+          state.status = "succeeded";
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          localStorage.setItem("token", action.payload.token);
+        }
+      )
       .addCase(login.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
       })
+
+      // Register
       .addCase(registerAsync.pending, (state) => {
         state.status = "loading";
         state.error = undefined;
       })
-      .addCase(registerAsync.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
-        state.status = "succeeded";
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      })
+      .addCase(
+        registerAsync.fulfilled,
+        (state, action: PayloadAction<{ user: User; token: string }>) => {
+          state.status = "succeeded";
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          localStorage.setItem("token", action.payload.token);
+        }
+      )
       .addCase(registerAsync.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;

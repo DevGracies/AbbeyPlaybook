@@ -7,6 +7,7 @@ import Playbook from './pages/Playbook';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import PrivateRoute from './components/PrivateRoute'; // import wrapper
+import OAuthSuccess from "./pages/OAuthSuccess";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+          <Route path="/oauthSuccess" element={<OAuthSuccess />} />
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
           <Route path="/" element={<Home />} />
           <Route path="/playbooks" element={<Playbook />} />

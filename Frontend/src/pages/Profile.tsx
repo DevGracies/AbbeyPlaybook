@@ -4,80 +4,110 @@ import { motion } from "framer-motion";
 import { Avatar, Button, TextField } from "@mui/material";
 import { Edit, Save, Logout, Upload } from "@mui/icons-material";
 import client from "../api/client";
+import { logout } from "../context/Reducer/authReducer";
+import { useDispatch } from "react-redux";
 
-interface ProfileData {
-  name: string;
-  position: string;
-  about: string;
-  avatar: string;
-}
+type ProfileData = {
+  id?: number;
+  fullName: string;
+  position?: string | null;
+  aboutWork?: string | null;
+  profilePic?: string | null;
+  email?: string;
+};
 
 const Profile: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    name: "",
+    fullName: "",
     position: "",
-    about: "",
-    avatar: "",
+    aboutWork: "",
+    profilePic: "",
   });
 
-  // Fetch profile from backend
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data } = await client.get<ProfileData>("/profile/me");
-        setProfile(data);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      }
-    };
-    fetchProfile();
-  }, []);
+  const dispatch = useDispatch();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async () => {
+useEffect(() => {
+   const storedProfile = localStorage.getItem("profile");
+  if (storedProfile) {
+    setProfile(JSON.parse(storedProfile));
+  }
+  
+  const fetchProfile = async () => {
     try {
-      setLoading(true);
-      await client.put("/profile/update", profile);
-      setEditMode(false);
+      const { data } = await client.get<ProfileData>("/users/profile");
+      setProfile(data);
     } catch (err) {
-      console.error("Error updating profile:", err);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load profile:", err);
     }
   };
 
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (e.target.files && e.target.files[0]) {
-      const formData = new FormData();
-      formData.append("avatar", e.target.files[0]);
+  fetchProfile();
+}, []);
 
-      try {
-        const { data } = await client.post<{ avatarUrl: string }>(
-          "/profile/avatar",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        setProfile({ ...profile, avatar: data.avatarUrl });
-      } catch (err) {
-        console.error("Error uploading avatar:", err);
-      }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { name, value } = e.target;
+  setProfile(prev => ({ ...prev, [name]: value }));
+};
+
+const handleSave = async () => {
+  try {
+    setLoading(true);
+
+    const payload = {
+      fullName: profile.fullName,
+      position: profile.position,
+      aboutWork: profile.aboutWork,
+      profilePic: profile.profilePic,
+    };
+
+    console.log("Updating profile with payload:", payload);
+
+    const { data } = await client.put<ProfileData>("/users/profile", payload);
+
+    setProfile({
+      id: data.id,
+      fullName: data.fullName ?? "",
+      position: data.position ?? "",
+      aboutWork: data.aboutWork ?? "",
+      profilePic: data.profilePic ?? "",
+      email: data.email,
+    });
+ localStorage.setItem("profile", JSON.stringify(data));
+    setEditMode(false);
+    console.log("Profile updated:", data);
+
+  } catch (err) {
+    console.error("Error updating profile:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const { data } = await client.post<{ avatarUrl: string; user?: ProfileData }>(
+        "/users/avatar",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      setProfile(prev => ({ ...prev, profilePic: data.avatarUrl }));
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
     }
   };
 
   const handleLogout = async () => {
     try {
-      await client.post("/auth/logout");
+      dispatch(logout());
       window.location.href = "/login";
     } catch (err) {
       console.error("Error logging out:", err);
@@ -86,14 +116,10 @@ const Profile: React.FC = () => {
 
   return (
     <Wrapper>
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
         <ProfileCard>
           <AvatarWrapper>
-            <Avatar src={profile.avatar} sx={{ width: 120, height: 120 }} />
+            <Avatar src={profile.profilePic || undefined} sx={{ width: 120, height: 120 }} />
             {editMode && (
               <UploadLabel htmlFor="avatar-upload">
                 <Upload fontSize="small" /> Upload
@@ -113,8 +139,8 @@ const Profile: React.FC = () => {
               <>
                 <TextField
                   label="Full Name"
-                  name="name"
-                  value={profile.name}
+                  name="fullName"
+                  value={profile.fullName}
                   onChange={handleChange}
                   fullWidth
                   margin="normal"
@@ -122,15 +148,15 @@ const Profile: React.FC = () => {
                 <TextField
                   label="Position"
                   name="position"
-                  value={profile.position}
+                  value={profile.position ?? ""}
                   onChange={handleChange}
                   fullWidth
                   margin="normal"
                 />
                 <TextField
                   label="What I love about my work"
-                  name="about"
-                  value={profile.about}
+                  name="aboutWork"
+                  value={profile.aboutWork ?? ""}
                   onChange={handleChange}
                   fullWidth
                   multiline
@@ -140,37 +166,24 @@ const Profile: React.FC = () => {
               </>
             ) : (
               <>
-                <h2>{profile.name}</h2>
+                <h2>{profile.fullName}</h2>
                 <h4>{profile.position}</h4>
-                <p>{profile.about}</p>
+                <p>{profile.aboutWork}</p>
               </>
             )}
           </ProfileInfo>
 
           <Actions>
             {editMode ? (
-              <ActionButton
-                variant="contained"
-                onClick={handleSave}
-                startIcon={<Save />}
-                disabled={loading}
-              >
+              <ActionButton variant="contained" onClick={handleSave} startIcon={<Save />} disabled={loading}>
                 {loading ? "Saving..." : "Save"}
               </ActionButton>
             ) : (
-              <ActionButton
-                variant="contained"
-                onClick={() => setEditMode(true)}
-                startIcon={<Edit />}
-              >
+              <ActionButton variant="contained" onClick={() => setEditMode(true)} startIcon={<Edit />}>
                 Edit Profile
               </ActionButton>
             )}
-            <LogoutButton
-              variant="outlined"
-              startIcon={<Logout />}
-              onClick={handleLogout}
-            >
+            <LogoutButton variant="outlined" startIcon={<Logout />} onClick={handleLogout}>
               Logout
             </LogoutButton>
           </Actions>
@@ -182,7 +195,6 @@ const Profile: React.FC = () => {
 
 export default Profile;
 
-/* ------------------- Styled Components ------------------- */
 const Wrapper = styled.div`
   display: flex;
   justify-content: center;

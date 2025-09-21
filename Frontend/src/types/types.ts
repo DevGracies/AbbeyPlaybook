@@ -3,3 +3,8 @@ export interface User {
   fullName: string;
   email: string;
 }
+export interface PlaybookType {
+  _id: string;
+  title: string;
+  content: string;
+}

@@ -156,6 +156,10 @@ export default function SignUp() {
   }
 };
 
+const handleGoogleLogin = () => {
+  window.location.href = "https://abbeyplaybook.onrender.com/api/auth/google";
+};
+
   return (
     <>
       <GlobalReset />
@@ -296,8 +300,9 @@ export default function SignUp() {
 
             <BottomRow>
               <Typography variant="caption" style={{ color: "#6b7280" }}>
-                By signing up you agree to our <StyledLink to="/terms">Terms</StyledLink> &{" "}
-                <StyledLink to="/privacy">Privacy</StyledLink>.
+                Sign up with Google <Button onClick={handleGoogleLogin}>
+        Continue with Google
+      </Button>
               </Typography>
             </BottomRow>
           </FormCard>

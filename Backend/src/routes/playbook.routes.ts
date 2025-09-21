@@ -1,17 +1,29 @@
 import { Router } from "express";
-import { create, getAll, update, remove, love,getPersonalPlaybooks, getFollowedPlaybooks  } from "../controllers/playbook.controller";
-import {authenticate} from "../middleware/auth.middleware" 
+import { create, getAll, update, remove, love, getPersonalPlaybooks, getFollowedPlaybooks, createPlaybook,
+  getPersonalPlaybooks,
+  getUserPlaybooks,
+  updatePlaybook,
+  deletePlaybook,  
+  getPlaybooksForFollowing} from "../controllers/playbook.controller";
+import {authMiddleware, requireAuth } from "../middleware/auth.middleware" 
 const router = Router();
 
+router.post("/", authMiddleware, createPlaybook);
+router.get("/me", authMiddleware, getPersonalPlaybooks);
+router.get("/user/:userId",  getUserPlaybooks);
+router.put("/:playbookId", authMiddleware, updatePlaybook);
+router.delete("/:playbookId", authMiddleware, deletePlaybook);
 
-router.get("/personal", authenticate, getPersonalPlaybooks);
-router.get("/following", authenticate, getFollowedPlaybooks);
+router.get("/following", requireAuth, getPlaybooksForFollowing);
+router.get("/users/:userId/playbooks", getUserPlaybooks);
+
+
+router.post("/:id/love", love);
 
 router.post("/", create);
 router.get("/", getAll);
 router.put("/:id", update);
 router.delete("/:id", remove);
-router.post("/:id/love", love);
 
-export default router;
+export default router; 
 

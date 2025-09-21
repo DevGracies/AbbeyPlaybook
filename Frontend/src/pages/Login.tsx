@@ -114,7 +114,8 @@ const onSubmit: SubmitHandler<LoginForm> = async (data) => {
   setErrorMessage(""); 
   try {
     const result = await dispatch(login(data)).unwrap(); 
-    localStorage.setItem("token", result.token);
+     console.log("Login result:", result)
+    localStorage.setItem("token", result.accessToken);
     window.location.href = "/";
   } catch (err: unknown) {
     if (typeof err === "string") {
@@ -127,7 +128,9 @@ const onSubmit: SubmitHandler<LoginForm> = async (data) => {
   }
 };
 
-
+const handleGoogleLogin = () => {
+  window.location.href = "https://abbeyplaybook.onrender.com/api/auth/google";
+};
 
   return (
     <>
@@ -185,12 +188,15 @@ const onSubmit: SubmitHandler<LoginForm> = async (data) => {
 
             <BottomRow>
               <Typography variant="caption" style={{ color: "#6b7280" }}>
-                By signing in you agree to our <StyledLink to="/terms">Terms</StyledLink> & <StyledLink to="/privacy">Privacy</StyledLink>
+                SignIn with Googgle  <Button onClick={handleGoogleLogin}>
+        Continue with Google
+      </Button>
               </Typography>
               <Typography variant="caption" style={{ color: "#6b7280" }}>
                 New hire? <StyledLink to="/signup" aria-label="Sign up">Signup here →</StyledLink>
               </Typography>
             </BottomRow>
+                 
           </FormCard>
         </RightPanel>
       </PageWrapper>

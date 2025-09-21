@@ -1,7 +1,7 @@
 export interface Playbook {
   id: number;
   title: string;
-  body: string;
+  content: string;
   loves: number;
   userId: number;
 }

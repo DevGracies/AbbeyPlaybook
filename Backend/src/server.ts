@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+
 import "reflect-metadata";
 import express from "express";
 import session from "express-session";
@@ -9,12 +13,13 @@ import playbookRoutes from "./routes/playbook.routes";
 import { errorHandler } from "./middleware/error.middleware";
 import "./utils/oauth"; 
 import { config } from "./config/config";
-import { pool } from "./config/database";
-import { createTables } from "./config/createTables";
+import { pool, ensureSchema  } from "./config/database";
+
+
+
 const app = express();
 
 // Middlewares
-
 const allowedOrigins = ["http://localhost:5173", "https://abbeyplaybook.vercel.app"];
 
 app.use(cors({
@@ -37,6 +42,11 @@ app.use(passport.session());
 pool.query("SELECT NOW()")
   .then(() => console.log("Database connected"))
   .catch(err => console.error("Database connection failed:", err));
+
+
+(async () => {
+  await ensureSchema(); 
+})();
 
 // Routes
 app.use("/api/auth", authRoutes);

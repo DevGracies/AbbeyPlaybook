@@ -14,7 +14,7 @@ const Content = styled.main`
   flex: 1;
   padding: 2rem;
   background: #f8f9fa;
-  margin-top: 64px; /* offset for fixed navbar */
+  margin-top: 64px; 
 `;
 
 const MainLayout = () => {

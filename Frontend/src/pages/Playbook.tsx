@@ -20,14 +20,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
-import client from "../api/client"; // ✅ use your shared axios client
-
-// Types
-interface PlaybookType {
-  _id: string;
-  title: string;
-  content: string;
-}
+import client from "../api/client";
+import { PlaybookType } from "../types/types";
 
 const PageWrapper = styled.div`
   display: flex;
@@ -69,33 +63,27 @@ const CreateSection = styled(motion.div)`
   }
 `;
 const MyPlaybooks = styled.div`
-  max-width: 950px;
+  max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  overflow-x: auto;
+  display: grid;
   gap: 1rem;
-  padding-bottom: 1rem;
-  scroll-snap-type: x mandatory;
+  padding: 1rem;
 
-  & > * {
-    scroll-snap-align: start;
-  }
+  grid-template-columns: repeat(4, 1fr);
 
-  &::-webkit-scrollbar {
-    height: 8px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #b71c1c;
-    border-radius: 4px;
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   @media (max-width: 768px) {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    overflow-x: unset; /* disable horizontal scroll */
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
   }
 `;
+
 
 const PlaybookCard = styled(motion(Card))`
   width: 280px;
@@ -109,8 +97,8 @@ const PlaybookCard = styled(motion(Card))`
   overflow: hidden;
 
   @media (max-width: 768px) {
-    width: 100%;  /* 📱 full width in grid */
-    height: auto; /* let content expand naturally */
+    width: 100%;
+    height: auto;
   }
 
   .playbook-title {
@@ -134,7 +122,6 @@ const PlaybookCard = styled(motion(Card))`
   }
 `;
 
-
 export default function Playbook() {
   const [playbooks, setPlaybooks] = useState<PlaybookType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,82 +130,83 @@ export default function Playbook() {
   const [selected, setSelected] = useState<PlaybookType | null>(null);
   const [editMode, setEditMode] = useState(false);
 
-  // Fetch playbooks
- useEffect(() => {
-  const fetchPlaybooks = async () => {
+  useEffect(() => {
+    const fetchPlaybooks = async () => {
+      try {
+        const res = await client.get("/playbooks/me");
+
+        const mapped: PlaybookType[] = res.data.map(
+          (pb: { id: number; title: string; content: string }) => ({
+            id: pb.id,
+            title: pb.title,
+            content: pb.content,
+          })
+        );
+
+        setPlaybooks(mapped);
+      } catch (err) {
+        console.error("Error fetching playbooks", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaybooks();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newPlaybook.title || !newPlaybook.content) return;
+
     try {
-      const res = await client.get("/playbooks/personal");
+      const res = await client.post("/playbooks", {
+        title: newPlaybook.title,
+        content: newPlaybook.content,
+      });;
 
- const mapped: PlaybookType[] = res.data.map((pb: { id: string; title: string; body: string }) => ({
-  _id: pb.id,
-  title: pb.title,
-  content: pb.body,
-}));
+      const mapped: PlaybookType = {
+        id: res.data.id,
+        title: res.data.title,
+        content: res.data.content,
+      };
 
-
-      setPlaybooks(mapped);
+      setPlaybooks([mapped, ...playbooks]);
+      setNewPlaybook({ title: "", content: "" });
     } catch (err) {
-      console.error("Error fetching playbooks", err);
-    } finally {
-      setLoading(false);
+      console.log("Token in localStorage:", localStorage.getItem("token"));
+      console.error("Error creating playbook", err);
     }
   };
-  fetchPlaybooks();
-}, []);
 
-
- const handleCreate = async () => {
-  if (!newPlaybook.title || !newPlaybook.content) return;
-  try {
-    const res = await client.post("/playbooks", {
-      title: newPlaybook.title,
-      body: newPlaybook.content, 
-      userId: 1,             
-    });
-
-    const mapped = {
-      _id: res.data.id,
-      title: res.data.title,
-      content: res.data.body,
-    };
-
-    setPlaybooks([mapped, ...playbooks]);
-    setNewPlaybook({ title: "", content: "" });
-  } catch (err) {
-    console.error("Error creating playbook", err);
-  }
-};
-
-const handleUpdate = async () => {
+ const handleUpdate = async () => {
   if (!selected) return;
   try {
-    const res = await client.put(`/playbooks/${selected._id}`, {
+    const res = await client.put(`/playbooks/${selected.id}`, {
       title: selected.title,
-      body: selected.content, 
+      content: selected.content,
     });
 
-    const mapped = {
-      _id: res.data.id,
+    const mapped: PlaybookType = {
+      id: res.data.id,
       title: res.data.title,
-      content: res.data.body,
+      content: res.data.content,
     };
 
-    setPlaybooks((prev) =>
-      prev.map((pb) => (pb._id === selected._id ? mapped : pb))
+    setPlaybooks((prev: PlaybookType[]) =>
+      prev.map((pb) => (pb.id === selected.id ? mapped : pb))
     );
+
+    setSelected(mapped); 
     setEditMode(false);
   } catch (err) {
     console.error("Error updating playbook", err);
   }
 };
 
-
-  // Delete
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await client.delete(`/playbooks/${id}`);
-      setPlaybooks((prev) => prev.filter((pb) => pb._id !== id));
-      if (selected?._id === id) setSelected(null);
+      setPlaybooks((prev) => prev.filter((pb) => pb.id !== id));
+      if (selected?.id === id) setSelected(null);
     } catch (err) {
       console.error("Error deleting playbook", err);
     }
@@ -243,9 +231,13 @@ const handleUpdate = async () => {
         <Typography variant="h3" sx={{ fontWeight: 800, color: "#fff" }}>
           Your Role, Your Playbook ✨
         </Typography>
-            <Typography
+        <Typography
           variant="body1"
-          sx={{ maxWidth: 650, color: "rgba(255,255,255,0.9)", margin: "0 auto" }}
+          sx={{
+            maxWidth: 650,
+            color: "rgba(255,255,255,0.9)",
+            margin: "0 auto",
+          }}
         >
           Every employee has a unique way of working. AbbeyPlaybook helps you:
           <br />
@@ -254,7 +246,6 @@ const handleUpdate = async () => {
         </Typography>
       </HeroSection>
 
-      {/* Create Section */}
       <CreateSection>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           Create a New Playbook
@@ -295,7 +286,6 @@ const handleUpdate = async () => {
         </Button>
       </CreateSection>
 
-      {/* Playbooks List */}
       <Typography
         variant="h5"
         sx={{ fontWeight: 700, textAlign: "center", marginTop: "1rem" }}
@@ -304,9 +294,12 @@ const handleUpdate = async () => {
       </Typography>
       <MyPlaybooks>
         {playbooks.map((pb) => (
-          <PlaybookCard key={pb._id}>
+          <PlaybookCard key={pb.id}>
             <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "#0a1d37" }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "#0a1d37" }}
+              >
                 {pb.title}
               </Typography>
               <Typography
@@ -326,7 +319,7 @@ const handleUpdate = async () => {
               </Button>
               <Button
                 size="small"
-                onClick={() => handleDelete(pb._id)}
+                onClick={() => handleDelete(pb.id)}
                 sx={{ color: "#b71c1c", fontWeight: 600, textTransform: "none" }}
               >
                 Delete
@@ -336,8 +329,12 @@ const handleUpdate = async () => {
         ))}
       </MyPlaybooks>
 
-      {/* Modal */}
-      <Dialog open={!!selected} onClose={() => setSelected(null)} fullWidth maxWidth="sm">
+      <Dialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
           {editMode ? "Edit Playbook" : selected?.title}
           <IconButton onClick={() => setSelected(null)}>
@@ -385,7 +382,7 @@ const handleUpdate = async () => {
               <Button
                 startIcon={<DeleteIcon />}
                 sx={{ color: "#b71c1c" }}
-                onClick={() => selected && handleDelete(selected._id)}
+                onClick={() => selected && handleDelete(selected.id)}
               >
                 Delete
               </Button>
