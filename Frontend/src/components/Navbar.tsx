@@ -13,7 +13,6 @@ import { Menu as MenuIcon, AccountCircle } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// Motion-enabled AppBar
 const MotionAppBar = motion(AppBar);
 
 const StyledAppBar = styled(MotionAppBar)`

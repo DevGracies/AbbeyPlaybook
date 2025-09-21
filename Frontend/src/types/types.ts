@@ -4,7 +4,7 @@ export interface User {
   email: string;
 }
 export interface PlaybookType {
-  _id: string;
+  id: number;
   title: string;
   content: string;
 }

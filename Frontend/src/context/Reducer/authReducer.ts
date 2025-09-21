@@ -15,6 +15,9 @@ const initialState: AuthState = {
   status: "idle",
 };
 
+
+
+
 export const login = createAsyncThunk(
   "auth/login",
   async (data: { email: string; password: string }) => {

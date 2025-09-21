@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { create, getAll, update, remove, love, getPersonalPlaybooks, getFollowedPlaybooks, createPlaybook,
+import { create, getAll, update, remove, love, createPlaybook,
   getPersonalPlaybooks,
   getUserPlaybooks,
   updatePlaybook,

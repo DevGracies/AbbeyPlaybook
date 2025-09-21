@@ -147,7 +147,6 @@ export const unfollow = async (req: Request & { user?: any }, res: Response) => 
   }
 };
 
-// Get list of following IDs for current user
 export const getFollowing = async (req: Request & { user?: any }, res: Response) => {
   try {
     const userId = Number(req.user?.id) || Number(req.query.userId);

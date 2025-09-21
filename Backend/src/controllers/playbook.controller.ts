@@ -3,34 +3,31 @@ import { Request, Response, NextFunction  } from "express";
 import * as PlaybookService from "../services/playbook.service";
 import { pool } from "../config/database";
 
-
-
-// Create personal playbook
 export const createPlaybook = async (req: Request, res: Response) => {
   try {
     console.log("Playbook request body:", req.body);
     console.log("Playbook user from token:", req.user);
     const { title, content } = req.body;
-    const userId = req.user.id; 
+   const userId = (req.user as { id: number }).id;
+
   if (!title || !content) {
       return res.status(400).json({ error: "Title and content are required" });
     }
     const playbook = await PlaybookService.createPlaybookService(userId, title, content);
     res.status(201).json(playbook);
   } catch (error) {
-   console.error("Error creating playbook:", error.message || error);
+   console.error("Error creating playbook:", error);
     return res.status(500).json({ error: "Server error creating playbook" });
   }
 };
 
-// Get personal playbooks
-export const getPersonalPlaybooks = async (req: AuthRequest, res: Response) => {
+export const getPersonalPlaybooks = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+const userId = (req.user as { id: number }).id;
 
-    const userId = req.user.id;
     const playbooks = await PlaybookService.getPersonalPlaybooksService(userId);
     res.json(playbooks);
   } catch (error) {
@@ -53,8 +50,7 @@ export const updatePlaybook = async (req: Request, res: Response) => {
   try {
     const { playbookId } = req.params;
     const { title, content } = req.body;
-    const userId = req.user.id;
-
+const userId = (req.user as { id: number }).id;
     console.log("Update request body:", req.body);
     console.log("Params:", req.params);
 
@@ -78,11 +74,11 @@ export const updatePlaybook = async (req: Request, res: Response) => {
   }
 };
 
-// Delete playbook
 export const deletePlaybook = async (req: Request, res: Response) => {
   try {
     const { playbookId } = req.params;
-    const userId = req.user.id;
+  const userId = (req.user as { id: number }).id;
+
 
     const deleted = await PlaybookService.deletePlaybookService(Number(playbookId), userId);
     if (!deleted) return res.status(403).json({ error: "Not allowed to delete this playbook" });
@@ -120,7 +116,6 @@ export const love = async (req: Request & { user?: any }, res: Response) => {
     const playbookId = Number(req.params.id);
     if (!playbookId) return res.status(400).json({ error: "Invalid playbook ID" });
 
-    // Optional: get userId if you want to track who loved it
     const userId = req.user?.id;
     if (!userId) console.warn("No logged-in user found");
 
@@ -187,24 +182,19 @@ export const remove = async (req: Request, res: Response) => {
 
 
 
-// GET /playbooks/following
 export const getPlaybooksForFollowing = async (req: Request & { user?: any }, res: Response) => {
   try {
-    // If client passed authors param (comma-separated), prefer it
     let authorIds: number[] = [];
     if (req.query.authors) {
       const authorsParam = String(req.query.authors);
       authorIds = authorsParam.split(",").map((s) => Number(s)).filter(Boolean);
     } else {
-      // fallback: get following ids for logged-in user
       const userId = Number(req.user?.id);
-      if (!userId) return res.json([]); // no user -> nothing
+      if (!userId) return res.json([]);
       authorIds = await UserService.getFollowingIds(userId);
     }
 
     if (!authorIds.length) return res.json([]);
-
-    // adjust column name: assume playbooks.author_id or playbooks.author
     const result = await pool.query(
       "SELECT * FROM playbooks WHERE author_id = ANY($1::int[]) ORDER BY created_at DESC",
       [authorIds]
