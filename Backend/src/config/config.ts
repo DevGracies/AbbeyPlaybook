@@ -12,8 +12,8 @@ export const config = {
   jwt: {
     accessSecret: getEnv("JWT_ACCESS_SECRET"),
     refreshSecret: getEnv("JWT_REFRESH_SECRET"),
-    accessExpiry: getEnv("ACCESS_TOKEN_EXPIRES_IN"),   // e.g., "15m"
-    refreshExpiry: getEnv("REFRESH_TOKEN_EXPIRES_IN"), // e.g., "7d"
+    accessExpiry: getEnv("ACCESS_TOKEN_EXPIRES_IN"),  
+    refreshExpiry: getEnv("REFRESH_TOKEN_EXPIRES_IN"),
   },
   oauth: {
     googleClientID: getEnv("GOOGLE_CLIENT_ID"),

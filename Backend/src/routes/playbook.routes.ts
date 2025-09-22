@@ -14,7 +14,7 @@ router.get("/user/:userId",  getUserPlaybooks);
 router.put("/:playbookId", authMiddleware, updatePlaybook);
 router.delete("/:playbookId", authMiddleware, deletePlaybook);
 
-router.get("/following", requireAuth, getPlaybooksForFollowing);
+router.get("/following", authMiddleware, getPlaybooksForFollowing);
 router.get("/users/:userId/playbooks", getUserPlaybooks);
 
 
