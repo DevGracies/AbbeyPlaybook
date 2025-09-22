@@ -73,7 +73,7 @@ useEffect(() => {
       try {
         let allPlaybooks: Playbook[] = [];
         for (const userId of followedUsers) {
-          const res = await client.get(`/playbooks/users/${userId}/playbooks`); // ✅ fixed route
+          const res = await client.get(`/playbooks/users/${userId}/playbooks`); 
           allPlaybooks = [...allPlaybooks, ...res.data];
         }
         setPlaybooks(allPlaybooks);

@@ -17,11 +17,10 @@ export const signup = async (fullName: string, email: string, password: string) 
   }
 
   const user = result.rows[0];
-
-  const accessToken = signAccessToken({ id: user.id, email: user.email });
+const accessToken = signAccessToken({ id: user.id, email: user.email });
   const refreshToken = signRefreshToken({ id: user.id, email: user.email });
 
-  return { user, accessToken, refreshToken };
+  return { user, token: accessToken, refreshToken };
 };
 
 export const login = async (email: string, password: string) => {
@@ -38,5 +37,5 @@ export const login = async (email: string, password: string) => {
   const accessToken = signAccessToken({ id: user.id, email: user.email });
   const refreshToken = signRefreshToken({ id: user.id, email: user.email });
 
-  return { user, accessToken, refreshToken };
+  return { user, token: accessToken, refreshToken };
 };

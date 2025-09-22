@@ -17,6 +17,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login", session: false }),
   (req: any, res) => {
+    console.log("Google User:", req.user);
     const token = jwt.sign(
       { id: req.user.id, email: req.user.email },
       process.env.JWT_ACCESS_SECRET as string,

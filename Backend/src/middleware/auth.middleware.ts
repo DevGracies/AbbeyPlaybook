@@ -37,9 +37,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No token provided" });
   }
-
   const token = authHeader.split(" ")[1];
-
   try {
     const decoded = verifyToken(token, "access") as { id: number; email: string };
     req.user = { id: decoded.id, email: decoded.email };
