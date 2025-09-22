@@ -56,7 +56,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
     if (!token) return res.status(401).json({ error: "Unauthorized" });
 
-    const secret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_ACCESS_SECRET;
     if (!secret) return res.status(500).json({ error: "Server misconfiguration" });
 
     const payload = jwt.verify(token, secret) as JwtPayload;
