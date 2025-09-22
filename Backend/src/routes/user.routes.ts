@@ -7,7 +7,7 @@ import { getMyProfile, updateMyProfile, uploadAvatar, getFollowing, unfollow, up
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB
 
-router.get("/me", authMiddleware, getMyProfile);
+router.get("/me", requireAuth, getMyProfile);
 router.put("/profile", authMiddleware, updateMyProfile);
 router.get("/users", getUsers)
 router.post("/avatar", authMiddleware, upload.single("avatar"), uploadAvatar);

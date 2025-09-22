@@ -27,10 +27,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 export interface AuthRequest extends Request {
   user?: { id: number; email: string };
 }
+export interface AuthRequest extends Request {
+  user?: { id: number; email: string };
+}
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-
-    const authHeader = req.headers.authorization || "";
+  const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No token provided" });
@@ -52,7 +54,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   try {
     const authHeader = req.headers.authorization || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-    if (!token) return res.status(401).json({ error: "No token provided" });
+    if (!token) return res.status(401).json({ error: "Unauthorized" });
 
     const secret = process.env.JWT_SECRET;
     if (!secret) return res.status(500).json({ error: "Server misconfiguration" });

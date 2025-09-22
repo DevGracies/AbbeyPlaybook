@@ -53,7 +53,7 @@ const authSlice = createSlice({
         state.status = "loading";
         state.error = undefined;
       })
-      .addCase(
+      .addCase( 
         login.fulfilled,
         (state, action: PayloadAction<{ user: User; token: string }>) => {
           state.status = "succeeded";
