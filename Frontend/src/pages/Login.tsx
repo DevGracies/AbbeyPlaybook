@@ -115,7 +115,7 @@ const onSubmit: SubmitHandler<LoginForm> = async (data) => {
   try {
     const result = await dispatch(login(data)).unwrap(); 
      console.log("Login result:", result)
-    localStorage.setItem("token", result.token);
+    localStorage.setItem("token", result.accessToken);
     window.location.href = "/";
   } catch (err: unknown) {
     if (typeof err === "string") {

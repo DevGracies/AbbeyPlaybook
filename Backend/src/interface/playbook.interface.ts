@@ -1,5 +1,5 @@
 export interface Playbook {
-  id: number;
+  id: string;
   title: string;
   content: string;
   loves: number;

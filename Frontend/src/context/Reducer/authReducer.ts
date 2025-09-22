@@ -45,7 +45,8 @@ const authSlice = createSlice({
       state.error = undefined;
       localStorage.removeItem("token"); 
     },
-  },
+  }, 
+
   extraReducers: (builder) => {
     builder
       .addCase(login.pending, (state) => {

@@ -26,7 +26,7 @@ router.get(
     const isNew = req.user.isNew ? "signup" : "login";
 
     res.redirect(
-      `http://localhost:5173/oauthSuccess?token=${token}&mode=${isNew}`
+      `https://abbeyplaybook.vercel.app/oauthSuccess?token=${token}&mode=${isNew}`
     );
   }
 );
