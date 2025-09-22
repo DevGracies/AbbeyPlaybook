@@ -13,7 +13,7 @@ function OAuthSuccess() {
     }
   }, [navigate, searchParams]);
 
-  return <p>Logging you in...</p>;
+  return <p>Logging you in....</p>;
 }
 
 export default OAuthSuccess;
