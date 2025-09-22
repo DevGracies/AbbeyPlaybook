@@ -24,6 +24,9 @@ export const ensureSchema = async () => {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255),
+        fullName VARCHAR(255),
+        aboutWork TEXT,
+        profilePic TEXT,
         google_id VARCHAR(255) UNIQUE,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
